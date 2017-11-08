@@ -11,7 +11,7 @@ angular.module('movieApp', ['ngRoute'])
 	.otherwise({
 		redirectTo: '/home'
 	});
-}).controller('homeCtrl', function ($scope, actorServ, couchdbSrv) {
+}).controller('homeCtrl', function ($scope, imdbServ, couchdbSrv) {
 
 	$('#searchButton').on('click',function(){
 		$scope.movies = '';
@@ -27,10 +27,13 @@ angular.module('movieApp', ['ngRoute'])
 			console.log('resolve from ctrl: ' + data.toString());
 			$scope.movies = data.filmography.actor;
 		},function(err){
+			console.log('error thrown by couchdbSrv.getMovies(actor): ' + err);
 			imdbServ.getMovies(actor).then(function(data){
 				$scope.movies = data.filmography.actor;
 				couchdbSrv.postMovies(data);
-			}, function(err){});
+			}, function(err){
+				console.log('error thrown by imdbServ.getMovies(actor): ' + err);
+			});
 		});
 	});
 }).service('imdbServ',function($http, $q){
@@ -53,11 +56,7 @@ angular.module('movieApp', ['ngRoute'])
 		console.log(url);
 		$http.get(url)
 		.then(function(data){
-			if(true){
-				q.resolve(data.data);
-			}else{
-				q.reject('something');
-			}
+			q.resolve(data.data);
 		},function(err){
 			q.reject(err);
 		});
@@ -70,7 +69,7 @@ angular.module('movieApp', ['ngRoute'])
 		};
 		$.ajax({
 			type: 'PUT',
-			url: '../../' + movies,
+			url: '../../' + actor.title,
 			data: JSON.stringify(postData),
 			contentType: 'application/json',
 			dataType: "json",
@@ -78,7 +77,7 @@ angular.module('movieApp', ['ngRoute'])
 				console.log('POST SUCCESS :' + data.toString());
 			},
 			error: function(XMLHttpRequest, textStatus, errorThrown){
-				console.log(errorThrown);
+				console.log('postMovies PUT error: ' + errorThrown);
 			}
 		});
 	}
