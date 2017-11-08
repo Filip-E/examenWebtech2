@@ -17,15 +17,10 @@ angular.module('movieApp', ['ngRoute'])
 		$scope.movies = '';
 		var actor = $('#actorText').val().toLowerCase();
 
-		/*imdbServ.getMovies(actor).then(function(data){
-        		console.log('resolve from ctrl: ' + data.toString());
-        		$scope.movies = data.filmography.actor;
-        	},function(err){
-        		console.log('ctrl promise error: ' + err);
-        	});*/
+
 		couchdbSrv.getMovies(actor).then(function(data){
 			console.log('resolve from ctrl: ' + data.toString());
-			$scope.movies = data.filmography.actor;
+			$scope.movies = data.movies;
 		},function(err){
 			console.log('error thrown by couchdbSrv.getMovies(actor): ' + err);
 			imdbServ.getMovies(actor).then(function(data){
@@ -33,6 +28,7 @@ angular.module('movieApp', ['ngRoute'])
 				couchdbSrv.postMovies(data);
 			}, function(err){
 				console.log('error thrown by imdbServ.getMovies(actor): ' + err);
+				$scope.movies = 'actor not found';
 			});
 		});
 	});
@@ -43,7 +39,12 @@ angular.module('movieApp', ['ngRoute'])
 		console.log(url);
 		$http.get(url)
 		.then(function(data){
-			q.resolve(data.data[0]);
+			if(data.data != null){
+				q.resolve(data.data[0]);
+			}else{
+				q.reject('actor not found');
+			}
+			
 		},function(err){
 			q.reject(err);
 		});
@@ -52,7 +53,7 @@ angular.module('movieApp', ['ngRoute'])
 }).service('couchdbSrv',function($http, $q){
 	this.getMovies = function(actorName) {
 		var q = $q.defer();
-		var url = 'http://localhost:5984/students/' + actorName;
+		var url = 'http://localhost:5984/movieapp/' + encodeURIComponent(actorName);
 		console.log(url);
 		$http.get(url)
 		.then(function(data){
@@ -69,7 +70,7 @@ angular.module('movieApp', ['ngRoute'])
 		};
 		$.ajax({
 			type: 'PUT',
-			url: '../../' + actor.title,
+			url: '../../' + actor.title.toLowerCase(),
 			data: JSON.stringify(postData),
 			contentType: 'application/json',
 			dataType: "json",
